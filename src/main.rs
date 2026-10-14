@@ -9,7 +9,9 @@ const H: usize = 32;
 const SCALE: usize = 25;
 
 fn main() {
-    let path: String = env::args().nth(1).expect("Usage: program <path>");
+    let path: String = env::args()
+        .nth(1)
+        .expect("Usage: cargo run -- <path-to-rom>");
     let rom: Vec<u8> = fs::read(&path)
         .unwrap_or_else(|e| err(&format!("Could not read {path}"), e, 1))
         .into_iter()
