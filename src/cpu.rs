@@ -1,4 +1,5 @@
 use beep::beep;
+use minifb::Key;
 
 fn word_nibble(word: u8, idx: u8) -> u8 {
     (word & (0xF << (4 * idx))) >> (4 * idx)
@@ -22,6 +23,7 @@ pub struct Cpu {
     delay_timer: u8,
     sound_timer: u8,
     memory: [u8; 4096],
+    keys: [bool; 16],
     framebuffer: [bool; 64 * 32],
 }
 impl Cpu {
@@ -36,6 +38,7 @@ impl Cpu {
             delay_timer: 0,
             sound_timer: 0,
             memory,
+            keys: [false; 16],
             framebuffer: [false; 64 * 32],
         }
     }
@@ -76,7 +79,10 @@ impl Cpu {
             (0xA, a, b, c) => Self::set_index_register(self, join_arr(&[a, b, c])),
             (0xB, a, b, c) => Self::offset_jump(self, join_arr(&[a, b, c])),
             (0xD, x, y, n) => Self::draw(self, x, y, n),
+            (0xE, x, 0x9, 0xE) => Self::skip_if_key_down(self, x as usize),
+            (0xE, x, 0xA, 0x1) => Self::skip_if_key_up(self, x as usize),
             (0xF, x, 0x0, 0x7) => Self::get_delay(self, x as usize),
+            (0xF, x, 0x0, 0xA) => Self::wait_for_key(self, x as usize),
             (0xF, x, 0x1, 0x5) => Self::set_delay(self, x as usize),
             (0xF, x, 0x1, 0x8) => Self::set_sound(self, x as usize),
             (0xF, x, 0x1, 0xE) => Self::add_i(self, x as usize),
@@ -94,10 +100,11 @@ impl Cpu {
         &self.framebuffer
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, keys: [bool; 16]) {
         if self.sound_timer > 0 {
             let _ = beep(0);
         }
+        self.keys = keys;
         self.delay_timer = self.delay_timer.saturating_sub(1);
         self.sound_timer = self.sound_timer.saturating_sub(1);
     }
@@ -241,9 +248,22 @@ impl Cpu {
         }
     }
 
-    fn skip_if_key(&mut self, x: usize) {}
-
-    fn skip_ifn_key(&mut self, x: usize) {}
+    fn wait_for_key(&mut self, x: usize) {
+        match self.keys.iter().position(|&pressed| pressed) {
+            Some(key) => self.v[x] = key as u8,
+            None => self.pc -= 2,
+        };
+    }
+    fn skip_if_key_down(&mut self, x: usize) {
+        if self.keys[self.v[x] as usize] {
+            self.pc += 2
+        }
+    }
+    fn skip_if_key_up(&mut self, x: usize) {
+        if !self.keys[self.v[x] as usize] {
+            self.pc += 2
+        }
+    }
 
     fn get_delay(&mut self, x: usize) {
         self.v[x] = self.delay_timer;
