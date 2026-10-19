@@ -7,6 +7,8 @@ use exceptions::e_handler;
 use minifb::{Key, Window, WindowOptions};
 use std::{env, fs};
 
+use crate::wayland::keyboard::VKeyboard;
+
 const W: usize = 64;
 const H: usize = 32;
 const SCALE: usize = 5;
@@ -33,7 +35,7 @@ fn main() {
     let path: String = env::args()
         .nth(1)
         .expect("Usage: cargo run -- <path-to-rom>");
-    wayland::keyboard::run();
+    let keboard = VKeyboard::new();
     let rom: Vec<u8> = fs::read(&path)
         .unwrap_or_else(|e| e_handler(&format!("Could not read {path}"), e, 1))
         .into_iter()
@@ -42,18 +44,14 @@ fn main() {
     let mut window = Window::new("Chip-8", W * SCALE, H * SCALE, WindowOptions::default()).unwrap();
     let mut keys = [false; 16];
     let mut buffer = vec![0u32; W * SCALE * H * SCALE];
-    let mut pressed = window.get_keys();
 
     window.set_target_fps(1);
     while window.is_open() {
-        // for (i, &k) in KEYMAP.iter().enumerate() {
-        //     keys[i] = window.is_key_down(k);
-        // }
-        // println!("{keys:?}");
-        pressed = window.get_keys();
-        if !pressed.is_empty() {
-            println!("{pressed:?}");
+        for (i, &k) in KEYMAP.iter().enumerate() {
+            keys[i] = window.is_key_down(k);
         }
+        println!("{keys:?}");
+
         // for _ in 0..10 {
         //     cpu.work();
         // }

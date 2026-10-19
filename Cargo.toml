@@ -6,5 +6,6 @@ edition = "2024"
 [dependencies]
 beep = "0.3.0"
 minifb = "0.29.0"
+rustix = "1.1.5"
 wayland-client = "0.31.15"
 wayland-protocols-misc = { version = "0.3.12", features = ["client"] }

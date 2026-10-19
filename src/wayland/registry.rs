@@ -1,7 +1,8 @@
 use std::error::Error;
 
 use wayland_client::{
-    Connection, Dispatch, EventQueue, Proxy, QueueHandle,
+    Connection, Dispatch, DispatchError, EventQueue, Proxy, QueueHandle,
+    backend::WaylandError,
     globals::{BindError, GlobalList, GlobalListContents, registry_queue_init},
     protocol::wl_registry,
 };
@@ -42,23 +43,25 @@ macro_rules! wl_no_events {
 
 pub struct Wayland<T> {
     _conn: Connection,
-    globals: GlobalList,
+    _globals: GlobalList,
     _queue: EventQueue<T>,
     qh: QueueHandle<T>,
+    state: T,
 }
 impl<T> Wayland<T>
 where
     T: Dispatch<wl_registry::WlRegistry, GlobalListContents> + 'static,
 {
-    pub fn connect() -> Result<Self, Box<dyn Error>> {
+    pub fn connect(state: T) -> Result<Self, Box<dyn Error>> {
         let conn = Connection::connect_to_env()?;
         let (globals, queue) = registry_queue_init::<T>(&conn)?;
         let qh = queue.handle();
         Ok(Self {
             _conn: conn,
-            globals,
+            _globals: globals,
             _queue: queue,
             qh,
+            state,
         })
     }
 
@@ -68,6 +71,18 @@ where
         U: Send + Sync + 'static,
         T: Dispatch<I, U> + 'static,
     {
-        self.globals.bind(&self.qh, 1..=1, udata)
+        self._globals.bind(&self.qh, 1..=1, udata)
+    }
+
+    pub fn qh(&self) -> &QueueHandle<T> {
+        &self.qh
+    }
+
+    pub fn flush(&self) -> Result<(), WaylandError> {
+        self._conn.flush()
+    }
+
+    pub fn roundtrip(&mut self) -> Result<usize, DispatchError> {
+        self._queue.roundtrip(&mut self.state)
     }
 }
