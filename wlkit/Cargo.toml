@@ -1,0 +1,10 @@
+[package]
+name = "wlkit"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+rustix = "1.1.5"
+wayland-client = "0.31.15"
+wayland-protocols = "0.32.13"
+wayland-protocols-misc = { version = "0.3.12", features = ["client"] }
