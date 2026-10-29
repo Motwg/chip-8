@@ -80,7 +80,8 @@ where
         U: Send + Sync + 'static,
         T: Dispatch<I, U> + 'static,
     {
-        self.globals.bind(&self.qh, 1..=1, udata)
+        self.globals
+            .bind(&self.qh, 1..=I::interface().version, udata)
     }
 
     pub fn qh(&self) -> &QueueHandle<T> {

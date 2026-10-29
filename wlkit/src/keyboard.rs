@@ -31,7 +31,8 @@ impl Dispatch<WlKeyboard, ()> for WindowState {
                 keys,
             } => println!("Enter {:?} vs {:?}", state.keys(), keys),
             wl_keyboard::Event::Leave { serial, surface } => {
-                println!("Leave")
+                println!("Leave");
+                surface.destroy();
             }
             wl_keyboard::Event::Key {
                 serial,
