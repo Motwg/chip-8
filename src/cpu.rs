@@ -1,5 +1,4 @@
 use beep::beep;
-use minifb::Key;
 
 fn word_nibble(word: u8, idx: u8) -> u8 {
     (word & (0xF << (4 * idx))) >> (4 * idx)

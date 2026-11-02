@@ -2,8 +2,6 @@ use crate::{
     registry::{Ignore, Wayland},
     states::WindowState,
 };
-use rustix::fs::{MemfdFlags, memfd_create};
-use std::{default::Default, derive};
 use wayland_client::{
     Connection, Dispatch, QueueHandle,
     protocol::{
@@ -22,35 +20,41 @@ impl Dispatch<WlKeyboard, ()> for WindowState {
         _qhandle: &QueueHandle<Self>,
     ) {
         match event {
-            wl_keyboard::Event::Keymap { format, fd, size } => {
-                println!("Keymap {:?} | {:?} | {:?}", format, fd, size);
-            }
+            wl_keyboard::Event::Keymap {
+                format: _,
+                fd: _,
+                size: _,
+            } => {}
             wl_keyboard::Event::Enter {
-                serial,
-                surface,
-                keys,
-            } => println!("Enter {:?} vs {:?}", state.keys(), keys),
-            wl_keyboard::Event::Leave { serial, surface } => {
+                serial: _,
+                surface: _,
+                keys: _,
+            } => {}
+            wl_keyboard::Event::Leave { serial: _, surface } => {
                 println!("Leave");
                 surface.destroy();
             }
             wl_keyboard::Event::Key {
-                serial,
-                time,
+                serial: _,
+                time: _,
                 key,
                 state: key_state,
-            } => println!("Key {:?} - {:?}", key, key_state),
+            } => {
+                println!("Key {:?} - {:?}", key, key_state);
+                state.enter(key, key_state);
+                println!("{:?}", state.keys())
+            }
             wl_keyboard::Event::Modifiers {
-                serial,
-                mods_depressed,
-                mods_latched,
-                mods_locked,
-                group,
+                serial: _serial,
+                mods_depressed: _mods_depressed,
+                mods_latched: _mods_latched,
+                mods_locked: _mods_locker,
+                group: _group,
             } => println!("Modifiers"),
             wl_keyboard::Event::RepeatInfo { rate, delay } => {
                 println!("RepeatInfo {} | {}", rate, delay)
             }
-            _ => println!("Default"),
+            _ => {}
         }
     }
 }
