@@ -9,24 +9,6 @@ use wlkit::Window;
 // const W: usize = 64;
 // const H: usize = 32;
 // const SCALE: usize = 5;
-// const KEYMAP: [Key; 16] = [
-//     Key::X,
-//     Key::Key1,
-//     Key::Key2,
-//     Key::Key3, // 0 1 2 3
-//     Key::Q,
-//     Key::W,
-//     Key::E,
-//     Key::A, // 4 5 6 7
-//     Key::S,
-//     Key::D,
-//     Key::Z,
-//     Key::C, // 8 9 A B
-//     Key::Key4,
-//     Key::R,
-//     Key::F,
-//     Key::V, // C D E F
-// ];
 
 fn main() {
     let path: String = env::args()
@@ -39,17 +21,11 @@ fn main() {
         .collect();
     let mut cpu = Cpu::new(&rom);
     // let mut window = Window::new("Chip-8", W * SCALE, H * SCALE, WindowOptions::default()).unwrap();
-    // let mut keys = [false; 16];
     // let mut buffer = vec![0u32; W * SCALE * H * SCALE];
     window.screen().fill(0x000000ff);
     while window.is_alive() {
         window.pool();
-        //         keyboard.keys();
-        //         for (i, &k) in KEYMAP.iter().enumerate() {
-        //             keys[i] = window.is_key_down(k);
-        //         }
-        //         println!("{keys:?}");
-        //
+        cpu.tick(window.keys());
         //         for _ in 0..10 {
         //             cpu.work();
         //         }

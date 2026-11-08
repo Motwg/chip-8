@@ -17,7 +17,7 @@ impl Window {
         self.screen.is_alive()
     }
 
-    pub fn keys(&self) -> &Vec<u32> {
+    pub fn keys(&self) -> &[u32] {
         self.wl.state().keys()
     }
 

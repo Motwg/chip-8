@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use beep::beep;
 
 fn word_nibble(word: u8, idx: u8) -> u8 {
@@ -22,7 +24,8 @@ pub struct Cpu {
     delay_timer: u8,
     sound_timer: u8,
     memory: [u8; 4096],
-    keys: [bool; 16],
+    keys: Vec<u8>,
+    keymap: [u32; 16],
     framebuffer: [bool; 64 * 32],
 }
 impl Cpu {
@@ -37,7 +40,8 @@ impl Cpu {
             delay_timer: 0,
             sound_timer: 0,
             memory,
-            keys: [false; 16],
+            keys: vec![],
+            keymap: [45, 2, 3, 4, 16, 17, 18, 30, 31, 32, 44, 46, 5, 19, 33, 47],
             framebuffer: [false; 64 * 32],
         }
     }
@@ -99,13 +103,20 @@ impl Cpu {
         &self.framebuffer
     }
 
-    pub fn tick(&mut self, keys: [bool; 16]) {
+    pub fn tick(&mut self, keys: &[u32]) {
         if self.sound_timer > 0 {
             let _ = beep(0);
         }
-        self.keys = keys;
+        self.keys = self.key_mapper(keys);
         self.delay_timer = self.delay_timer.saturating_sub(1);
         self.sound_timer = self.sound_timer.saturating_sub(1);
+    }
+
+    fn key_mapper(&self, keys: &[u32]) -> Vec<u8> {
+        keys.iter()
+            .filter_map(|code| self.keymap.iter().position(|k| k == code))
+            .map(|k| k as u8)
+            .collect()
     }
 
     fn jump(&mut self, idx: u16) {
@@ -248,18 +259,20 @@ impl Cpu {
     }
 
     fn wait_for_key(&mut self, x: usize) {
-        match self.keys.iter().position(|&pressed| pressed) {
-            Some(key) => self.v[x] = key as u8,
+        match self.keys.first() {
+            Some(&y) => self.v[x] = y,
             None => self.pc -= 2,
-        };
+        }
     }
+
     fn skip_if_key_down(&mut self, x: usize) {
-        if self.keys[self.v[x] as usize] {
+        if self.keys.contains(&(self.v[x])) {
             self.pc += 2
         }
     }
+
     fn skip_if_key_up(&mut self, x: usize) {
-        if !self.keys[self.v[x] as usize] {
+        if !self.keys.contains(&(self.v[x])) {
             self.pc += 2
         }
     }
