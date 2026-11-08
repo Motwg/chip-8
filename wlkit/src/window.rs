@@ -21,6 +21,14 @@ impl Window {
         self.wl.state().keys()
     }
 
+    pub fn screen(&mut self) -> &mut Screen {
+        &mut self.screen
+    }
+
+    pub fn pool(&mut self) {
+        self.wl.roundtrip().unwrap();
+    }
+
     pub fn run(&mut self) {
         self.screen.fill(0x000000ff);
         self.screen.write(0xF1000074, 000, 400, 100, 44);

@@ -68,7 +68,7 @@ fn parse_color(color: u32) -> [u8; 4] {
     ]
 }
 
-pub(crate) struct Screen {
+pub struct Screen {
     surface: WlSurface,
     _buffer: File,
     _width: u32,

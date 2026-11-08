@@ -32,10 +32,7 @@ fn main() {
     let path: String = env::args()
         .nth(1)
         .expect("Usage: cargo run -- <path-to-rom>");
-    // let mut vkb = wlkit::VKeyboard::new();
-    // vkb.write(vec![30, 30, 55, 54, 55]);
     let mut window = Window::new(960, 640);
-    // window.run();
     let rom: Vec<u8> = fs::read(&path)
         .unwrap_or_else(|e| e_handler(&format!("Could not read {path}"), e, 1))
         .into_iter()
@@ -44,9 +41,9 @@ fn main() {
     // let mut window = Window::new("Chip-8", W * SCALE, H * SCALE, WindowOptions::default()).unwrap();
     // let mut keys = [false; 16];
     // let mut buffer = vec![0u32; W * SCALE * H * SCALE];
-
+    window.screen().fill(0x000000ff);
     while window.is_alive() {
-        //window.
+        window.pool();
         //         keyboard.keys();
         //         for (i, &k) in KEYMAP.iter().enumerate() {
         //             keys[i] = window.is_key_down(k);
