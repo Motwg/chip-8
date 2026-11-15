@@ -50,7 +50,6 @@ impl Cpu {
             word_nibble(second, 0),
         );
 
-        // println!("{} - {first:02X}{second:02X}: ", self.pc);
         self.pc += 2;
         match nibbles {
             // (0x0, 0x0, 0x0, 0x0) => println!("subroutine"),
@@ -215,15 +214,6 @@ impl Cpu {
     }
 
     fn draw(&mut self, x: u8, y: u8, n: u8) {
-        println!(
-            "DRW pc={:03X} x={} y={} n={} I={:03X} sprite={:02X?}",
-            self.pc - 2,
-            self.v[usize::from(x)],
-            self.v[usize::from(y)],
-            n,
-            self.i,
-            &self.memory[self.i as usize..self.i as usize + usize::from(n)],
-        );
         let vx = (self.v[usize::from(x)] % 64) as usize;
         let vy = (self.v[usize::from(y)] % 32) as usize;
         self.v[0xF] = 0;

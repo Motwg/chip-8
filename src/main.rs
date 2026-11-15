@@ -26,20 +26,21 @@ fn main() {
     let mut cpu = Cpu::new(&rom);
     let mut buffer = vec![0u32; W * SCALE * H * SCALE];
     let frame = Duration::from_secs_f32(1.0 / 60.0);
-    let _ = window.screen().fill(0x000000ff);
+    let _ = window.screen().fill(0x00ffffff);
 
     while window.is_alive() {
         let start = Instant::now();
         window.pool();
         cpu.tick(window.keys());
-        for _ in 0..10 {
+        for _ in 0..100 {
             cpu.work();
         }
+
         let fb = cpu.framebuffer();
         for y in 0..H * SCALE {
             for x in 0..W * SCALE {
                 let on = fb[(y / SCALE) * W + (x / SCALE)];
-                buffer[y * W * SCALE + x] = if on { 0xFFA0A0FF } else { 0xFF000000 };
+                buffer[y * W * SCALE + x] = if on { 0xFFA0A0FF } else { 0x00000000 };
             }
         }
         window

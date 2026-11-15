@@ -68,12 +68,32 @@ fn parse_color(color: u32) -> [u8; 4] {
     ]
 }
 
+struct Damager {
+    x: u32,
+    y: u32,
+    dx: u32,
+    dy: u32,
+}
+
+impl Damager {
+    fn full(width: u32, height: u32) -> Self {
+        Self {
+            x: 0,
+            y: 0,
+            dx: width,
+            dy: height,
+        }
+    }
+}
+
 pub struct Screen {
     surface: WlSurface,
-    _buffer: File,
+    _buffer: WlBuffer,
+    _file: File,
     _width: u32,
     _height: u32,
 }
+
 impl Screen {
     pub fn new(wl: &mut Wayland<WindowState>, width: i32, height: i32) -> Self {
         let comp: WlCompositor = wl.get(Ignore).unwrap();
@@ -106,32 +126,51 @@ impl Screen {
         let _ = wl.roundtrip().unwrap();
         Screen {
             surface,
-            _buffer: file,
+            _buffer: buffer,
+            _file: file,
             _width: width as u32,
             _height: height as u32,
         }
     }
 
+    fn damage_full(&self) -> Damager {
+        Damager::full(self._width, self._height)
+    }
+
+    fn commit(&self, damager: Damager) {
+        self.surface.attach(Some(&self._buffer), 0, 0);
+        self.surface.damage_buffer(
+            damager.x as i32,
+            damager.y as i32,
+            damager.dx as i32,
+            damager.dy as i32,
+        );
+        self.surface.commit();
+    }
+
     pub fn write(&mut self, color: u32, x: u32, dx: u32, y: u32, dy: u32) -> Result<()> {
-        let clamp = dx.min(self._width.saturating_sub(x)) as usize;
-        let bytes = parse_color(color).repeat(clamp);
+        let clamp = dx.min(self._width.saturating_sub(x));
+        let bytes = color.to_le_bytes().repeat(clamp as usize);
         let rows = (dy).min(self._height.saturating_sub(y));
         for y_pos in y..y + rows {
-            self._buffer
+            self._file
                 .write_all_at(&bytes, ((y_pos * self._width + x) * 4) as u64)?;
         }
-        self.surface
-            .damage_buffer(x as i32, y as i32, clamp as i32, rows as i32);
-        self.surface.commit();
+        self.commit(Damager {
+            x,
+            y,
+            dx: clamp,
+            dy: rows,
+        });
         Ok(())
     }
 
     pub fn fill(&mut self, color: u32) -> Result<()> {
-        let bytes = parse_color(color).repeat(self._width as usize * self._height as usize);
-        self._buffer.write_all_at(&bytes, 0)?;
-        self.surface
-            .damage_buffer(0, 0, self._width as i32, self._height as i32);
-        self.surface.commit();
+        let bytes = color
+            .to_le_bytes()
+            .repeat(self._width as usize * self._height as usize);
+        self._file.write_all_at(&bytes, 0)?;
+        self.commit(self.damage_full());
         Ok(())
     }
 
@@ -140,10 +179,8 @@ impl Screen {
             .iter()
             .flat_map(|dword| dword.to_le_bytes())
             .collect();
-        self._buffer.write_all_at(&bytes, 0)?;
-        self.surface
-            .damage_buffer(0, 0, self._width as i32, self._height as i32);
-        self.surface.commit();
+        self._file.write_all_at(&bytes, 0)?;
+        self.commit(self.damage_full());
         Ok(())
     }
 
