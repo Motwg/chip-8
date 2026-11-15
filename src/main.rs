@@ -3,68 +3,49 @@ mod exceptions;
 
 use cpu::Cpu;
 use exceptions::e_handler;
-use std::{env, fs};
+use std::{
+    env, fs,
+    thread::sleep,
+    time::{Duration, Instant},
+};
 use wlkit::Window;
 
-// const W: usize = 64;
-// const H: usize = 32;
-// const SCALE: usize = 5;
+const W: usize = 64;
+const H: usize = 32;
+const SCALE: usize = 10;
 
 fn main() {
     let path: String = env::args()
         .nth(1)
         .expect("Usage: cargo run -- <path-to-rom>");
-    let mut window = Window::new(960, 640);
+    let mut window = Window::new((W * SCALE) as i32, (H * SCALE) as i32);
     let rom: Vec<u8> = fs::read(&path)
         .unwrap_or_else(|e| e_handler(&format!("Could not read {path}"), e, 1))
         .into_iter()
         .collect();
     let mut cpu = Cpu::new(&rom);
-    // let mut window = Window::new("Chip-8", W * SCALE, H * SCALE, WindowOptions::default()).unwrap();
-    // let mut buffer = vec![0u32; W * SCALE * H * SCALE];
+    let mut buffer = vec![0u32; W * SCALE * H * SCALE];
+    let frame = Duration::from_secs_f32(1.0 / 60.0);
     window.screen().fill(0x000000ff);
+
     while window.is_alive() {
+        let start = Instant::now();
         window.pool();
         cpu.tick(window.keys());
-        //         for _ in 0..10 {
-        //             cpu.work();
-        //         }
-        //         cpu.tick(keys);
-        //         let fb = cpu.framebuffer();
-        //         for y in 0..H * SCALE {
-        //             for x in 0..W * SCALE {
-        //                 let on = fb[(y / SCALE) * W + (x / SCALE)];
-        //                 buffer[y * W * SCALE + x] = if on { 0xFFA0A0 } else { 0 };
-        //             }
-        //         }
-        //
-        //         window
-        //             .update_with_buffer(&buffer, W * SCALE, H * SCALE)
-        //             .unwrap();
+        for _ in 0..10 {
+            cpu.work();
+        }
+        let fb = cpu.framebuffer();
+        for y in 0..H * SCALE {
+            for x in 0..W * SCALE {
+                let on = fb[(y / SCALE) * W + (x / SCALE)];
+                buffer[y * W * SCALE + x] = if on { 0x00FFA0A0 } else { 0 };
+            }
+        }
+        window
+            .screen()
+            .update_with_buffer(&buffer)
+            .expect("Buffer couldn't be updated");
+        sleep(frame.saturating_sub(start.elapsed()));
     }
 }
-//
-// fn key_mapper(keys: Vec<Key>) -> Vec<u8> {
-//     // minifb::Window::get_keys(&self)
-//     keys.iter()
-//         .filter_map(|key| match key {
-//             Key::Key1 => Some(0x1),
-//             Key::Key2 => Some(0x2),
-//             Key::Key3 => Some(0x3),
-//             Key::Q => Some(0x4),
-//             Key::W => Some(0x5),
-//             Key::E => Some(0x6),
-//             Key::A => Some(0x7),
-//             Key::S => Some(0x8),
-//             Key::D => Some(0x9),
-//             Key::Z => Some(0xA),
-//             Key::C => Some(0xB),
-//             Key::Key4 => Some(0xC),
-//             Key::R => Some(0xD),
-//             Key::F => Some(0xE),
-//             Key::V => Some(0xF),
-//             Key::X => Some(0x0),
-//             _ => None,
-//         })
-//         .collect()
-// }

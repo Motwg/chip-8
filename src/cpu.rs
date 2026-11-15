@@ -10,10 +10,6 @@ fn join_arr(arr: &[u8]) -> u16 {
     arr.iter().fold(0u16, |acc, &v| (acc << 4) + u16::from(v))
 }
 
-fn u8_to_bool(byte: u8, pos: u8) -> bool {
-    (byte >> (7 - pos)) & 1 == 1
-}
-
 const START: usize = 0x200;
 
 pub struct Cpu {
@@ -34,7 +30,7 @@ impl Cpu {
         memory[START..START + rom.len()].copy_from_slice(rom);
         Cpu {
             pc: START as u16,
-            i: 0x0,
+            i: 0,
             v: [0; 16],
             stack: Vec::with_capacity(16),
             delay_timer: 0,
@@ -120,13 +116,11 @@ impl Cpu {
     }
 
     fn jump(&mut self, idx: u16) {
-        println!("jump to {idx}");
         self.pc = idx;
     }
 
     fn offset_jump(&mut self, idx: u16) {
         self.pc = idx + u16::from(self.v[0]);
-        println!("jump to {}", self.pc);
     }
 
     fn subroutine(&mut self, idx: u16) {
@@ -163,12 +157,10 @@ impl Cpu {
     }
 
     fn set_register(&mut self, v: usize, x: u8) {
-        println!("set register {v} to {x}");
         self.v[v] = x;
     }
 
     fn add_register(&mut self, v: usize, x: u8) {
-        println!("add {x} to register {v}");
         self.v[v] = self.v[v].wrapping_add(x);
     }
 
@@ -217,7 +209,6 @@ impl Cpu {
     }
 
     fn set_index_register(&mut self, x: u16) {
-        println!("set index register to {x}");
         self.i = x;
     }
 
@@ -226,28 +217,18 @@ impl Cpu {
     }
 
     fn draw(&mut self, x: u8, y: u8, n: u8) {
-        println!("draw {x} {y} {n}");
-        let vx = self.v[usize::from(x)] % 64;
-        let vy = self.v[usize::from(y)] % 32;
+        let vx = (self.v[usize::from(x)] % 64) as usize;
+        let vy = (self.v[usize::from(y)] % 32) as usize;
         self.v[0xF] = 0;
-        for h in 0..n {
-            let py = usize::from(vy) + usize::from(h);
-            if py >= 32 {
-                break;
-            }
-
-            let byte = self.memory[self.i as usize + h as usize];
-            for w in 0..8 {
-                let px = usize::from(vx) + usize::from(w);
-                if px >= 64 {
-                    break;
-                }
-
-                let idx = py * 64 + px;
-                if self.framebuffer[idx] & u8_to_bool(byte, w) {
+        for row in vy..(vy + n as usize).min(32) {
+            let byte = self.memory[self.i as usize + row - vy];
+            for col in vx..(vx + 8).min(64) {
+                let bit = (byte >> (7 - (col - vx))) & 1;
+                let idx = row * 64 + col;
+                if self.framebuffer[idx] & bit {
                     self.v[0xF] = 1;
                 }
-                self.framebuffer[idx] ^= u8_to_bool(byte, w);
+                self.framebuffer[idx] ^= bit;
             }
         }
     }
@@ -294,11 +275,11 @@ impl Cpu {
         self.memory[self.i as usize] = decimal.div_euclid(100);
         self.memory[self.i as usize + 1] = decimal.div_euclid(10) % 10;
         self.memory[self.i as usize + 2] = decimal.div_euclid(100);
-        println!(
-            "Storing {} into {:?}",
-            decimal,
-            &self.memory[self.i as usize..=self.i as usize + 2]
-        )
+        // println!(
+        //     "Storing {} into {:?}",
+        //     decimal,
+        //     &self.memory[self.i as usize..=self.i as usize + 2]
+        // )
     }
 
     fn store_reg(&mut self, x: usize) {

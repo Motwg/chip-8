@@ -40,9 +40,9 @@ impl Dispatch<WlKeyboard, ()> for WindowState {
                 key,
                 state: key_state,
             } => {
-                println!("Key {:?} - {:?}", key, key_state);
+                // println!("Key {:?} - {:?}", key, key_state);
                 state.enter(key, key_state);
-                println!("{:?}", state.keys())
+                // println!("{:?}", state.keys())
             }
             wl_keyboard::Event::Modifiers {
                 serial: _serial,

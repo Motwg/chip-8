@@ -4,7 +4,10 @@ use std::{
     os::{fd::AsFd, unix::fs::FileExt},
 };
 
-use rustix::fs::{MemfdFlags, memfd_create};
+use rustix::{
+    buffer,
+    fs::{MemfdFlags, memfd_create},
+};
 use wayland_client::{
     Connection, Dispatch, Proxy, QueueHandle,
     protocol::{
@@ -112,21 +115,39 @@ impl Screen {
         }
     }
 
-    pub fn write(&mut self, color: u32, x: u32, dx: u32, y: u32, dy: u32) {
-        let clamp = dx.min(self._width - x) as usize;
-        for y_pos in y..(y + dy).min(self._height) {
-            self._buffer.write_at(
-                &parse_color(color).repeat(clamp),
-                ((y_pos * self._width + x) * 4) as u64,
-            );
+    pub fn write(&mut self, color: u32, x: u32, dx: u32, y: u32, dy: u32) -> Result<()> {
+        let clamp = dx.min(self._width.saturating_sub(x)) as usize;
+        let bytes = parse_color(color).repeat(clamp);
+        let rows = (dy).min(self._height.saturating_sub(y));
+        for y_pos in y..y + rows {
+            self._buffer
+                .write_all_at(&bytes, ((y_pos * self._width + x) * 4) as u64)?;
         }
+        self.surface
+            .damage_buffer(x as i32, y as i32, clamp as i32, rows as i32);
         self.surface.commit();
+        Ok(())
     }
 
-    pub fn fill(&mut self, color: u32) {
-        self._buffer
-            .write_all(&parse_color(color).repeat(self._width as usize * self._height as usize));
+    pub fn fill(&mut self, color: u32) -> Result<()> {
+        let bytes = parse_color(color).repeat(self._width as usize * self._height as usize);
+        self._buffer.write_all_at(&bytes, 0)?;
+        self.surface
+            .damage_buffer(0, 0, self._width as i32, self._height as i32);
         self.surface.commit();
+        Ok(())
+    }
+
+    pub fn update_with_buffer(&mut self, buffer: &[u32]) -> Result<()> {
+        let bytes: Vec<u8> = buffer
+            .iter()
+            .flat_map(|dword| dword.to_le_bytes())
+            .collect();
+        self._buffer.write_all_at(&bytes, 0)?;
+        self.surface
+            .damage_buffer(0, 0, self._width as i32, self._height as i32);
+        self.surface.commit();
+        Ok(())
     }
 
     pub fn is_alive(&self) -> bool {
