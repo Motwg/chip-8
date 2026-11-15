@@ -1,13 +1,10 @@
 use std::{
     fs::File,
-    io::{Seek, Write},
+    io::{Result, Seek},
     os::{fd::AsFd, unix::fs::FileExt},
 };
 
-use rustix::{
-    buffer,
-    fs::{MemfdFlags, memfd_create},
-};
+use rustix::fs::{MemfdFlags, memfd_create};
 use wayland_client::{
     Connection, Dispatch, Proxy, QueueHandle,
     protocol::{

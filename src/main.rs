@@ -26,7 +26,7 @@ fn main() {
     let mut cpu = Cpu::new(&rom);
     let mut buffer = vec![0u32; W * SCALE * H * SCALE];
     let frame = Duration::from_secs_f32(1.0 / 60.0);
-    window.screen().fill(0x000000ff);
+    let _ = window.screen().fill(0x000000ff);
 
     while window.is_alive() {
         let start = Instant::now();
@@ -39,7 +39,7 @@ fn main() {
         for y in 0..H * SCALE {
             for x in 0..W * SCALE {
                 let on = fb[(y / SCALE) * W + (x / SCALE)];
-                buffer[y * W * SCALE + x] = if on { 0x00FFA0A0 } else { 0 };
+                buffer[y * W * SCALE + x] = if on { 0xFFA0A0FF } else { 0xFF000000 };
             }
         }
         window
