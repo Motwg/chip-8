@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+rodio = "0.23.0"
 rustix = "1.1.5"
 wayland-client = "0.31.15"
 wayland-protocols = "0.32.13"

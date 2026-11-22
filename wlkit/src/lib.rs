@@ -2,10 +2,12 @@
 mod registry;
 mod keyboard;
 mod screen;
+mod sound;
 mod states;
 mod vkeyboard;
 mod window;
 
+pub use sound::Speaker;
 pub use vkeyboard::VKeyboard;
 pub use window::Window;
 

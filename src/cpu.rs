@@ -1,5 +1,3 @@
-use beep::beep;
-
 fn word_nibble(word: u8, idx: u8) -> u8 {
     (word & (0xF << (4 * idx))) >> (4 * idx)
 }
@@ -96,13 +94,11 @@ impl Cpu {
         &self.framebuffer
     }
 
-    pub fn tick(&mut self, keys: &[u32]) {
-        if self.sound_timer > 0 {
-            let _ = beep(0);
-        }
+    pub fn tick(&mut self, keys: &[u32]) -> u8 {
         self.keys = self.key_mapper(keys);
         self.delay_timer = self.delay_timer.saturating_sub(1);
         self.sound_timer = self.sound_timer.saturating_sub(1);
+        self.sound_timer
     }
 
     fn key_mapper(&self, keys: &[u32]) -> Vec<u8> {

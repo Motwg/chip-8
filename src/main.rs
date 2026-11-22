@@ -8,7 +8,7 @@ use std::{
     thread::sleep,
     time::{Duration, Instant},
 };
-use wlkit::Window;
+use wlkit::{Speaker, Window};
 
 const W: usize = 64;
 const H: usize = 32;
@@ -24,6 +24,8 @@ fn main() {
         .into_iter()
         .collect();
     let mut cpu = Cpu::new(&rom);
+    let speaker = Speaker::new(1.0);
+    speaker.set_sin(440.0);
     let mut buffer = vec![0u32; W * SCALE * H * SCALE];
     let frame = Duration::from_secs_f32(1.0 / 60.0);
     let _ = window.screen().fill(0x00ffffff);
@@ -31,8 +33,9 @@ fn main() {
     while window.is_alive() {
         let start = Instant::now();
         window.pool();
-        cpu.tick(window.keys());
-        for _ in 0..100 {
+        let out_sounds = cpu.tick(window.keys());
+        speaker.play_while(out_sounds > 0);
+        for _ in 0..15 {
             cpu.work();
         }
 
