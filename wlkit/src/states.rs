@@ -8,7 +8,7 @@ use wayland_client::{
 use wayland_protocols::xdg::shell::client::{xdg_toplevel::XdgToplevel, xdg_wm_base::XdgWmBase};
 
 #[derive(Default)]
-pub(crate) struct WindowState {
+pub struct WindowState {
     keys: Vec<u32>,
 }
 impl WindowState {

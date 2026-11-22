@@ -1,10 +1,8 @@
-use std::thread::sleep;
-
-use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player, Source, source};
+use rodio::{DeviceSinkBuilder, MixerDeviceSink, Player, source};
 
 pub struct Speaker {
     player: Player,
-    sink: MixerDeviceSink,
+    _sink: MixerDeviceSink,
 }
 
 impl Speaker {
@@ -12,7 +10,10 @@ impl Speaker {
         let sink = DeviceSinkBuilder::open_default_sink().expect("Open default audio stream.");
         let player = Player::connect_new(&sink.mixer());
         player.set_volume(volume);
-        Speaker { player, sink }
+        Speaker {
+            player,
+            _sink: sink,
+        }
     }
 
     pub fn set_sin(&self, freq: f32) {

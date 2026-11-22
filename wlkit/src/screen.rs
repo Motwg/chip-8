@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{Result, Seek},
+    io::Result,
     os::{fd::AsFd, unix::fs::FileExt},
 };
 
@@ -27,7 +27,7 @@ use crate::{
 
 impl Dispatch<XdgSurface, ()> for WindowState {
     fn event(
-        state: &mut Self,
+        _state: &mut Self,
         proxy: &XdgSurface,
         event: <XdgSurface as Proxy>::Event,
         _data: &(),
@@ -43,7 +43,7 @@ impl Dispatch<XdgSurface, ()> for WindowState {
 
 impl Dispatch<XdgWmBase, ()> for WindowState {
     fn event(
-        state: &mut Self,
+        _state: &mut Self,
         proxy: &XdgWmBase,
         event: <XdgWmBase as Proxy>::Event,
         _data: &(),
@@ -57,15 +57,6 @@ impl Dispatch<XdgWmBase, ()> for WindowState {
             _ => {}
         }
     }
-}
-
-fn parse_color(color: u32) -> [u8; 4] {
-    [
-        (color >> 8) as u8,
-        (color >> 16) as u8,
-        (color >> 24) as u8,
-        color as u8,
-    ]
 }
 
 struct Damager {
@@ -101,15 +92,16 @@ impl Screen {
 
         let xdg_base: XdgWmBase = wl.get(Ignore).unwrap();
         let xdg_surface = xdg_base.get_xdg_surface(&surface, wl.qh(), ());
-        let top = xdg_surface.get_toplevel(wl.qh(), Ignore);
+        let _top = xdg_surface.get_toplevel(wl.qh(), Ignore);
         surface.commit();
         let _ = wl.roundtrip().unwrap();
 
         let shm: WlShm = wl.get(Ignore).unwrap();
-        let mut file = memfd_create("screen", MemfdFlags::CLOEXEC)
+        let file = memfd_create("screen", MemfdFlags::CLOEXEC)
             .map(File::from)
             .unwrap();
-        file.set_len((width * height * 4) as u64);
+        file.set_len((width * height * 4) as u64)
+            .expect("Could not create buffer of enough size");
         let pool: WlShmPool = shm.create_pool(file.as_fd(), width * height * 4, wl.qh(), Ignore);
         let buffer: WlBuffer = pool.create_buffer(
             0,
@@ -122,7 +114,6 @@ impl Screen {
         );
         let _ = surface.attach(Some(&buffer), 0, 0);
         surface.commit();
-        file.rewind();
         let _ = wl.roundtrip().unwrap();
         Screen {
             surface,

@@ -2,15 +2,15 @@ use crate::{keyboard::Keyboard, registry::Wayland, screen::Screen, states::Windo
 
 pub struct Window {
     wl: Wayland<WindowState>,
-    kb: Keyboard,
+    _kb: Keyboard,
     screen: Screen,
 }
 impl Window {
     pub fn new(width: i32, height: i32) -> Self {
         let mut wl = Wayland::connect(WindowState::default()).unwrap();
-        let kb = Keyboard::new(&mut wl);
+        let _kb = Keyboard::new(&mut wl);
         let screen = Screen::new(&mut wl, width, height);
-        Window { wl, kb, screen }
+        Window { wl, _kb, screen }
     }
 
     pub fn is_alive(&self) -> bool {
@@ -28,8 +28,6 @@ impl Window {
     pub fn pool(&mut self) -> usize {
         self.wl.roundtrip().unwrap()
     }
-
-
 }
 
 impl Default for Window {
