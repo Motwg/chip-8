@@ -21,7 +21,6 @@ impl Speaker {
 
     pub fn play_while(&self, condition: bool) {
         if condition {
-            println!("Start");
             self.player.play();
         } else {
             self.player.pause();
