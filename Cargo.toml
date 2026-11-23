@@ -3,8 +3,6 @@ name = "chip8"
 version = "0.1.0"
 edition = "2024"
 
-[workspace]
-members = ["wlkit"]
-
 [dependencies]
-wlkit = { path = "wlkit" }
+rand = "0.10.4"
+wlkit = { git = "https://github.com/Motwg/wlkit" }

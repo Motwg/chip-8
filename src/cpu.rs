@@ -72,6 +72,7 @@ impl Cpu {
             (0x9, x, y, 0x0) => Self::skip_ifn_eq(self, x as usize, y as usize),
             (0xA, a, b, c) => Self::set_index_register(self, join_arr(&[a, b, c])),
             (0xB, a, b, c) => Self::offset_jump(self, join_arr(&[a, b, c])),
+            (0xC, x, a, b) => Self::rand(self, x as usize, join_arr(&[a, b]) as u8),
             (0xD, x, y, n) => Self::draw(self, x, y, n),
             (0xE, x, 0x9, 0xE) => Self::skip_if_key_down(self, x as usize),
             (0xE, x, 0xA, 0x1) => Self::skip_if_key_up(self, x as usize),
@@ -80,11 +81,12 @@ impl Cpu {
             (0xF, x, 0x1, 0x5) => Self::set_delay(self, x as usize),
             (0xF, x, 0x1, 0x8) => Self::set_sound(self, x as usize),
             (0xF, x, 0x1, 0xE) => Self::add_i(self, x as usize),
+            (0xF, x, 0x2, 0x9) => Self::font_character(self, x as usize),
             (0xF, x, 0x3, 0x3) => Self::store_bcd(self, x as usize),
             (0xF, x, 0x5, 0x5) => Self::store_reg(self, x as usize),
             (0xF, x, 0x6, 0x5) => Self::fill_reg(self, x as usize),
             _ => {
-                println!("Invalid instruction");
+                println!("Invalid instruction {:?}", nibbles);
                 panic!()
             }
         };
@@ -125,14 +127,14 @@ impl Cpu {
         self.pc = self.stack.pop().unwrap();
     }
 
-    fn skip_if(&mut self, v: usize, nn: u8) {
-        if self.v[v] == nn {
+    fn skip_if(&mut self, x: usize, nn: u8) {
+        if self.v[x] == nn {
             self.pc += 2
         }
     }
 
-    fn skip_ifn(&mut self, v: usize, nn: u8) {
-        if self.v[v] != nn {
+    fn skip_ifn(&mut self, x: usize, nn: u8) {
+        if self.v[x] != nn {
             self.pc += 2
         }
     }
@@ -209,6 +211,10 @@ impl Cpu {
         self.framebuffer = [false; 64 * 32];
     }
 
+    fn rand(&mut self, x: usize, nn: u8) {
+        self.v[x] = rand::random::<u8>() & nn;
+    }
+
     fn draw(&mut self, x: u8, y: u8, n: u8) {
         let vx = (self.v[usize::from(x)] % 64) as usize;
         let vy = (self.v[usize::from(y)] % 32) as usize;
@@ -261,6 +267,21 @@ impl Cpu {
 
     fn set_sound(&mut self, x: usize) {
         self.sound_timer = self.v[x];
+    }
+
+    fn font_character(&mut self, x: usize) {
+        self.i = 0;
+        /*The index register I is set to the address
+         * of the hexadecimal character in VX.
+         * You probably stored that font somewhere
+         * in the first 512 bytes of memory, so now
+         * you just need to point I to the right character.
+
+        An 8-bit register can hold two hexadecimal numbers,
+        but this would only point to one character.
+        The original COSMAC VIP interpreter just took
+        the last nibble of VX and used that as the character.
+        */
     }
 
     fn store_bcd(&mut self, x: usize) {
